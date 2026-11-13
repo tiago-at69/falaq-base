@@ -41,6 +41,7 @@
                 <div class="card-body">
                     <p class="fs-5 mb-2 text-white">{{ $pergunta->texto }}</p>
                     <div class="d-flex justify-content-between align-items-center text-secondary small">
+                        <span>{{ $pergunta->user->name ?? 'Anônimo' }}</span>
                         <span>Status: <span class="badge bg-success">{{ $pergunta->status }}</span></span>
                         <span>{{ $pergunta->created_at->format('d/m/Y H:i') }}</span>
                     </div>

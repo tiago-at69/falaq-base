@@ -5,7 +5,10 @@ namespace Tests\Feature;
 use App\Models\Evento;
 use App\Models\Pergunta;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PerguntasTicketsTest extends TestCase
@@ -93,5 +96,72 @@ class PerguntasTicketsTest extends TestCase
             'texto' => 'Esta pergunta tem tamanho suficiente.',
             'status' => 'pendente',
         ]);
+    }
+
+    public function test_question_belongs_to_user_and_user_has_many_questions(): void
+    {
+        $user = User::factory()->create();
+        $evento = Evento::create(['titulo' => 'Palestra']);
+        $pergunta = Pergunta::create([
+            'evento_id' => $evento->id,
+            'user_id' => $user->id,
+            'texto' => 'Pergunta vinculada ao participante.',
+            'status' => 'pendente',
+        ]);
+
+        $this->assertInstanceOf(BelongsTo::class, $pergunta->user());
+        $this->assertTrue($pergunta->user->is($user));
+        $this->assertInstanceOf(HasMany::class, $user->perguntas());
+        $this->assertTrue($user->perguntas->first()->is($pergunta));
+    }
+
+    public function test_show_displays_the_author_name_and_anonymous_fallback(): void
+    {
+        $user = User::factory()->create(['name' => 'Tiago']);
+        $evento = Evento::create(['titulo' => 'Palestra']);
+
+        Pergunta::create([
+            'evento_id' => $evento->id,
+            'user_id' => $user->id,
+            'texto' => 'Pergunta com autor identificado.',
+            'status' => 'pendente',
+        ]);
+        Pergunta::create([
+            'evento_id' => $evento->id,
+            'texto' => 'Pergunta sem usuario vinculado.',
+            'status' => 'pendente',
+        ]);
+
+        $response = $this->withoutVite()->get("/eventos/{$evento->id}");
+
+        $response->assertOk();
+        $response->assertSee('Tiago', false);
+        $response->assertSee('Anônimo', false);
+    }
+
+    public function test_show_eager_loads_authors_in_one_query(): void
+    {
+        $evento = Evento::create(['titulo' => 'Palestra']);
+
+        foreach (range(1, 3) as $i) {
+            Pergunta::create([
+                'evento_id' => $evento->id,
+                'user_id' => User::factory()->create()->id,
+                'texto' => "Pergunta numero {$i} com autor.",
+                'status' => 'pendente',
+            ]);
+        }
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->withoutVite()->get("/eventos/{$evento->id}")->assertOk();
+
+        $userQueries = collect(DB::getQueryLog())
+            ->pluck('query')
+            ->filter(fn (string $query) => str_contains($query, 'from "users"'))
+            ->count();
+
+        $this->assertSame(1, $userQueries);
     }
 }
