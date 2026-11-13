@@ -46,7 +46,14 @@
     <div class="col-md-7">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="fw-bold m-0">📋 Perguntas do Evento</h4>
-            <span class="text-secondary small">Total no Banco: {{ $evento->perguntas->count() }}</span>
+            <div class="d-flex align-items-center gap-3">
+                @auth
+                    @if(auth()->id() === $evento->user_id)
+                        <a href="{{ route('eventos.moderacoes', $evento) }}" class="btn btn-sm btn-outline-warning">Fila de moderação</a>
+                    @endif
+                @endauth
+                <span class="text-secondary small">Total no Banco: {{ $evento->perguntas->count() }}</span>
+            </div>
         </div>
 
         @forelse($perguntas as $pergunta)
@@ -65,6 +72,19 @@
                             {{ $pergunta->usuario_votou ? 'Remover voto' : 'Upvote' }}
                         </button>
                     </form>
+                    @auth
+                        <form action="{{ route('perguntas.moderar', $pergunta) }}" method="POST" class="mt-2">
+                            @csrf
+                            <label for="motivo-{{ $pergunta->id }}" class="form-label text-secondary small mb-1">Reportar pergunta</label>
+                            <textarea name="motivo" id="motivo-{{ $pergunta->id }}" rows="2"
+                                      class="form-control form-control-sm bg-dark text-white border-secondary @error('motivo') is-invalid @enderror"
+                                      placeholder="Descreva o motivo da denúncia (mínimo de 10 caracteres)"></textarea>
+                            @error('motivo')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Moderar</button>
+                        </form>
+                    @endauth
                 </div>
             </div>
         @empty
