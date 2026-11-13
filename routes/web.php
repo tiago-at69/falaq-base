@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\PerguntaController;
 use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,8 @@ Route::middleware('auth')->group(function () {
         ->name('eventos.store');
     Route::post('/eventos/{evento}/participar', [EventoController::class, 'toggleInscricao'])
         ->name('eventos.participar');
+    Route::post('/perguntas/{pergunta}/votar', [PerguntaController::class, 'votar'])
+        ->name('perguntas.votar');
 });
 
 Route::get('/', [EventoController::class, 'index'])->name('eventos.index');

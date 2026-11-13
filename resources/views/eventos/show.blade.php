@@ -55,8 +55,16 @@
                     <p class="fs-5 mb-2 text-white">{{ $pergunta->texto }}</p>
                     <div class="d-flex justify-content-between align-items-center text-secondary small">
                         <span>Status: <span class="badge bg-success">{{ $pergunta->status }}</span></span>
+                        <span>{{ $pergunta->votos_count }} {{ $pergunta->votos_count == 1 ? 'voto' : 'votos' }}</span>
                         <span>{{ $pergunta->created_at->format('d/m/Y H:i') }}</span>
                     </div>
+                    <form action="{{ route('perguntas.votar', $pergunta) }}" method="POST" class="mt-3">
+                        @csrf
+                        <button type="submit"
+                                class="btn btn-sm {{ $pergunta->usuario_votou ? 'btn-warning fw-bold' : 'btn-outline-light' }}">
+                            {{ $pergunta->usuario_votou ? 'Remover voto' : 'Upvote' }}
+                        </button>
+                    </form>
                 </div>
             </div>
         @empty
